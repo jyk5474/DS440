@@ -6,43 +6,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
     <style>
       body {
-        display: flex; /* Use flexbox to arrange map and sidebar */
+        display: flex; 
         margin: 0;
         padding: 0;
       }
 
       .map-container {
-        width: 60%;    /* 60% width for the map container */
-        padding: 20px; /* Padding for spacing around the map */
+        width: 60%;   
+        padding: 20px; 
         box-sizing: border-box;
       }
 
       #map {
-        height: 90vh; /* Adjust height for a smaller map */
-        width: 100%;  /* Full width inside its container */
+        height: 90vh; 
+        width: 100%;  
         background-color: #fff;
-        border: 1px solid #ddd; /* Add a border to the map */
+        border: 1px solid #ddd; 
       }
 
       #sidebar {
-        width: 40%;     /* 40% width for the sidebar */
-        padding: 20px;  /* Add padding for spacing */
-        background-color: #f1f1f1; /* Light background color */
-        box-sizing: border-box;
+        width: 40%;     
+        padding: 20px;  
+        background-color: #f1f1f1; 
       }
 
       .box {
-        height: 150px;     /* Set a fixed height for each box */
+        height: 150px;     
         background-color: #fff;
         border: 1px solid #ddd;
-        margin-bottom: 20px; /* Space between boxes */
-        padding: 10px; /* Padding inside the boxes */
+        margin-bottom: 20px; 
+        padding: 10px; 
+      }
+
+      .plot-box {
+        height: auto;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+        padding: 10px;
+        text-align: center;
+      }
+
+      .plot-box img {
+        max-width: 100%;
+        height: auto;
       }
     </style>
   </head>
@@ -52,24 +63,96 @@
     </div>
 
     <div id="sidebar">
-      <div class="box"></div>
-      <div class="box"></div>
+      <div id="info" class="box">
+        Click on the map to get coordinates and ZIP Code
+        <p id="coordinates"></p>
+        <p id="zip-code"></p>
+      </div>
+      <div class="plot-box" id="income-plot-box" style="display: none;">
+        <img id="income-plot" alt="Income Plot">
+      </div>
     </div>
 
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script>
-      // Initialize the map and set its view to the given coordinates and zoom level
+      // initialize the map 
       var map = L.map('map').setView([40.7934, -77.8600], 13);
 
-      // Add OpenStreetMap tiles (the actual map tiles)
+      // add OpenStreetMap tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
+      // Element to display information
+      var infoBox = document.getElementById('info');
+      var coordinatesBox = document.getElementById('coordinates');
+      var zipCodeBox = document.getElementById('zip-code');
+
+      var currentCircle = null;
+
+      // event listener
+      map.on('click', function(e) {
+        var lat = e.latlng.lat.toFixed(4);
+        var lng = e.latlng.lng.toFixed(4);
+
+        // Remove the current circle
+        if (currentCircle) {
+          map.removeLayer(currentCircle);
+        }
+
+        // Add a blue circle marker at the user selected location
+        currentCircle = L.circle([lat, lng], {
+          color: 'blue',
+          fillColor: 'blue',
+          fillOpacity: 0.5,
+          radius: 1
+        }).addTo(map);
+
+        // Get ZIP code using OpenCage 
+        var apiKey = 'b3f99b81ff6844468e9c5f8333121a51'; 
+        var apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${apiKey}`;
+
+        fetch(apiUrl)
+          .then(response => response.json())
+          .then(data => {
+            if (data.results.length > 0) {
+              var components = data.results[0].components;
+              var zip = components.postcode;
+
+              coordinatesBox.innerHTML = 'Latitude: ' + lat + '<br>Longitude: ' + lng;
+              zipCodeBox.innerHTML = 'ZIP Code: ' + zip;
+
+              // update plots based on ZIP code
+              updatePlots(zip);
+            } else {
+              coordinatesBox.innerHTML = 'Latitude: ' + lat + '<br>Longitude: ' + lng;
+              zipCodeBox.innerHTML = 'ZIP Code: Not found';
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            coordinatesBox.innerHTML = 'Latitude: ' + lat + '<br>Longitude: ' + lng;
+            zipCodeBox.innerHTML = 'ZIP Code: Error retrieving data';
+          });
+      });
+
+      function updatePlots(zip) {
+    var incomePlot = document.getElementById('income-plot');
+    var incomePlotBox = document.getElementById('income-plot-box');
+
+    // Set the image source based on the ZIP code
+    if (zip === '16801') {
+        incomePlot.src = '/static/Images/income16801.png';  
+        incomePlotBox.style.display = 'block';  
+    } else if (zip === '16803') {
+        incomePlot.src = '/static/Images/income16803.png';  
+        incomePlotBox.style.display = 'block';  
+    } else {
+        incomePlotBox.style.display = 'none';  
+    }
+}
     </script>
   </body>
 </html>
