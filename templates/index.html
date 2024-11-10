@@ -16,15 +16,16 @@
       }
 
       .map-container {
-        width: 60%;   
-        padding: 20px; 
-        box-sizing: border-box;
-      }
+        width: 60%;
+        height: 100vh;  /* Ensure the container takes up the full height */
+        padding: 20px;
+        box-sizing: border-box;  /* This ensures padding is included in the element's total size */
+      }     
 
       #map {
         height: 90vh; 
         width: 100%;  
-        background-color: #fff;
+        background-color: #ffffff;
         border: 1px solid #ddd; 
       }
 
@@ -157,7 +158,7 @@
 
         // Get ZIP code using OpenCage API
         var apiKey = 'b3f99b81ff6844468e9c5f8333121a51'; 
-        var apiUrl = https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${apiKey};
+        var apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${apiKey}`;
 
         fetch(apiUrl)
           .then(response => response.json())
@@ -200,7 +201,7 @@
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          plotImg.src = /static/graphs/${data.graphFilename};
+          plotImg.src = `/static/graphs/${data.graphFilename}`;
           plotBox.style.display = 'block';
         } else {
           plotBox.style.display = 'none';
@@ -219,4 +220,5 @@
     </script>
   </body>
 </html>
+
 
