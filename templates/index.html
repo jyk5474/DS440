@@ -35,7 +35,7 @@
       }
 
       .box {
-        height: 150px;     
+        height: auto;     
         background-color: #fff;
         border: 1px solid #ddd;
         margin-bottom: 20px; 
@@ -64,35 +64,80 @@
 
     <div id="sidebar">
       <div id="info" class="box">
-        Click on the map to get coordinates and ZIP Code
-        <p id="coordinates"></p>
-        <p id="zip-code"></p>
+        <label><input type="checkbox" id="income-checkbox"> Show Income</label><br>
+        <label><input type="checkbox" id="age-checkbox"> Show Age</label><br>
+        <label><input type="checkbox" id="suppliers-checkbox"> Show Supplier Locations</label>
       </div>
-      <div class="plot-box" id="income-plot-box" style="display: none;">
-        <img id="income-plot" alt="Income Plot">
+      <div class="plot-box" id="plot-box" style="display: none;">
+        <img id="plot-img" alt="Data Plot">
       </div>
+      <p id="coordinates"></p>
+      <p id="zip-code"></p>
     </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script>
-      // initialize the map 
+      // Initialize the map 
       var map = L.map('map').setView([40.7934, -77.8600], 13);
 
-      // add OpenStreetMap tiles
+      // Add OpenStreetMap tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
-      // Element to display information
-      var infoBox = document.getElementById('info');
+      // Elements for displaying information
       var coordinatesBox = document.getElementById('coordinates');
       var zipCodeBox = document.getElementById('zip-code');
+      var incomeCheckbox = document.getElementById('income-checkbox');
+      var ageCheckbox = document.getElementById('age-checkbox');
+      var suppliersCheckbox = document.getElementById('suppliers-checkbox');
+      var plotImg = document.getElementById('plot-img');
+      var plotBox = document.getElementById('plot-box');
 
       var currentCircle = null;
+      var supplierMarkers = [];
 
-      // event listener
+      // Supplier data
+      var supplierData = [
+        { lat: 40.8246, lng: -77.8125 },
+        { lat: 40.7878, lng: -77.8564 },
+        { lat: 40.7842, lng: -77.8447 },
+        { lat: 40.8120, lng: -77.9082 }
+      ];
+
+      // Function to toggle supplier markers
+      function toggleSupplierMarkers(show) {
+        if (show) {
+          supplierData.forEach(function(supplier) {
+            var marker = L.marker([supplier.lat, supplier.lng]).addTo(map);
+            supplierMarkers.push(marker);
+          });
+        } else {
+          supplierMarkers.forEach(function(marker) {
+            map.removeLayer(marker);
+          });
+          supplierMarkers = [];
+        }
+      }
+
+      // Ensure only one of the income or age checkboxes is selected at a time
+      incomeCheckbox.addEventListener('change', function() {
+        if (incomeCheckbox.checked) {
+          ageCheckbox.checked = false;
+          updatePlots(); // Update plots when selection changes
+        }
+      });
+
+      ageCheckbox.addEventListener('change', function() {
+        if (ageCheckbox.checked) {
+          incomeCheckbox.checked = false;
+          updatePlots(); // Update plots when selection changes
+        }
+      });
+
+      // Event listener for map clicks
       map.on('click', function(e) {
         var lat = e.latlng.lat.toFixed(4);
         var lng = e.latlng.lng.toFixed(4);
@@ -102,7 +147,7 @@
           map.removeLayer(currentCircle);
         }
 
-        // Add a blue circle marker at the user selected location
+        // Add a blue circle marker at the user-selected location
         currentCircle = L.circle([lat, lng], {
           color: 'blue',
           fillColor: 'blue',
@@ -110,9 +155,9 @@
           radius: 1
         }).addTo(map);
 
-        // Get ZIP code using OpenCage 
+        // Get ZIP code using OpenCage API
         var apiKey = 'b3f99b81ff6844468e9c5f8333121a51'; 
-        var apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${apiKey}`;
+        var apiUrl = https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${apiKey};
 
         fetch(apiUrl)
           .then(response => response.json())
@@ -124,7 +169,7 @@
               coordinatesBox.innerHTML = 'Latitude: ' + lat + '<br>Longitude: ' + lng;
               zipCodeBox.innerHTML = 'ZIP Code: ' + zip;
 
-              // update plots based on ZIP code
+              // Update plots based on ZIP code and user selection
               updatePlots(zip);
             } else {
               coordinatesBox.innerHTML = 'Latitude: ' + lat + '<br>Longitude: ' + lng;
@@ -138,21 +183,40 @@
           });
       });
 
-      function updatePlots(zip) {
-    var incomePlot = document.getElementById('income-plot');
-    var incomePlotBox = document.getElementById('income-plot-box');
+    function updatePlots(zip) {
+    var showIncome = incomeCheckbox.checked;
+    var showAge = ageCheckbox.checked;
 
-    // Set the image source based on the ZIP code
-    if (zip === '16801') {
-        incomePlot.src = '/static/Images/income16801.png';  
-        incomePlotBox.style.display = 'block';  
-    } else if (zip === '16803') {
-        incomePlot.src = '/static/Images/income16803.png';  
-        incomePlotBox.style.display = 'block';  
+    // Determine demographic type based on selected checkboxes
+    var demographicType = showIncome ? 'income' : showAge ? 'age' : '';
+
+    // Send zip code and demographic type to Flask for generating the graph
+    if (demographicType && zip) {
+      fetch('/generate_graph', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zipCode: zip, demographicType: demographicType })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          plotImg.src = /static/graphs/${data.graphFilename};
+          plotBox.style.display = 'block';
+        } else {
+          plotBox.style.display = 'none';
+        }
+      })
+      .catch(error => console.error('Error:', error));
     } else {
-        incomePlotBox.style.display = 'none';  
+      plotBox.style.display = 'none';
     }
-}
+  }
+
+      // Event listener for suppliers checkbox
+      suppliersCheckbox.addEventListener('change', function() {
+        toggleSupplierMarkers(suppliersCheckbox.checked);
+      });
     </script>
   </body>
 </html>
+
