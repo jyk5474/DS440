@@ -29,7 +29,7 @@ def plot_age_distribution(zipcode, output_path):
     plt.figure(figsize=(12, 6))
     plt.bar(age_brackets, values, color='skyblue')
     plt.xlabel('Age Bracket')
-    plt.ylabel('Values')
+    plt.ylabel('Population')
     plt.title(f'Age Distribution for Zipcode {zipcode}')
     plt.xticks(rotation=45)
     plt.tight_layout()
@@ -38,6 +38,48 @@ def plot_age_distribution(zipcode, output_path):
     # Save the plot to the output path
     plt.savefig(output_path)
     plt.close()
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def plot_income_distribution(zipcode,output_path):
+    """
+    Plot a bar graph of median income information for different age groups for a given zipcode.
+    
+    Parameters:
+    zipcode (int or str): Zipcode to filter the data.
+    """
+    # Load the dataset
+    df = pd.read_csv('IncomeBracketPA.csv')
+    
+    # Filter the DataFrame for the given zipcode
+    df_zipcode = df[df['ZipCode'] == int(zipcode)]
+    
+    # Check if the dataframe is empty after filtering
+    if df_zipcode.empty:
+        print(f"No data found for zipcode: {zipcode}")
+        return
+    
+    # Extract the age brackets and their respective values
+    age_brackets = df.columns[2:-1].astype(str)  
+    values =  df_zipcode.iloc[0, 2:-1].astype(int) # Get the first row's income values for the given zipcode
+    
+    values.fillna(0, inplace=True)
+    # Plot the bar graph
+    plt.figure(figsize=(12, 6))
+    plt.bar(age_brackets, values, color='skyblue')
+    plt.xlabel('Age Group')
+    plt.ylabel('Median Income')
+    plt.title(f'Median Income by Age Group for Zipcode {zipcode}')
+    plt.xticks(rotation=45)
+    plt.ylim(0, max(values) * 1.1)
+    plt.tight_layout()
+
+
+    plt.savefig(output_path)
+    plt.close()
+
 
 def create_demographic_plot(zip_code, demographic_type, output_path):
     """
@@ -50,11 +92,7 @@ def create_demographic_plot(zip_code, demographic_type, output_path):
     """
     if demographic_type == 'income':
         # Generate a sample income plot
-        plt.figure()
-        plt.title(f'Income Data for Zip Code {zip_code}')
-        plt.bar(['Low', 'Medium', 'High'], [25, 50, 25])
-        plt.savefig(output_path)
-        plt.close()
+        plot_income_distribution(zip_code,output_path)
     elif demographic_type == 'age':
         # Call the plot_age_distribution function for the age demographic type
         plot_age_distribution(zip_code, output_path)
