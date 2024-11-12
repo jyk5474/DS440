@@ -1,12 +1,16 @@
+from flask import Flask, request, jsonify
 import requests
 import pandas as pd
 import folium
+import numpy as np
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 from sklearn.cluster import KMeans
 
 API_KEY = 'fsq34jULCzz+og3KIHasqw8qmGJEWm7eSjyJhI5Lg1/JcwY='
 BASE_URL = 'https://api.foursquare.com/v3/places/search'
+
+app = Flask(__name__)
 
 def get_nearby_restaurants(restaurant_type, latitude, longitude, output_path):
     """
@@ -58,19 +62,17 @@ def get_nearby_restaurants(restaurant_type, latitude, longitude, output_path):
         
         # Check if data is available
         if df.empty:
-            print(f"No data found for restaurant type: {restaurant_type} at location ({latitude}, {longitude})")
-            return
+            return jsonify({"message": f"No data found for restaurant type: {restaurant_type} at location ({latitude}, {longitude})"}), 404
         
         # Run k-means clustering
         k = 3  # Set the number of clusters
         kmeans = KMeans(n_clusters=k, random_state=0)
         df['cluster'] = kmeans.fit_predict(df[['latitude', 'longitude']])
         
-        # Create output with cluster information
+        # Save to CSV
         df.to_csv(output_path, index=False)
-        print(f"Data saved to {output_path}")
         
-        # Visualization (optional)
+        # Create and save a map with clusters visualized
         map_clusters = folium.Map(location=[latitude, longitude], zoom_start=12)
         
         # Set color scheme for clusters
@@ -80,7 +82,6 @@ def get_nearby_restaurants(restaurant_type, latitude, longitude, output_path):
         rainbow = [colors.rgb2hex(i) for i in colors_array]
 
         # Add markers to the map
-        markers_colors = []
         for lat, lon, cluster in zip(df['latitude'], df['longitude'], df['cluster']):
             folium.CircleMarker(
                 [lat, lon],
@@ -91,12 +92,24 @@ def get_nearby_restaurants(restaurant_type, latitude, longitude, output_path):
                 fill_color=rainbow[cluster-1],
                 fill_opacity=0.7).add_to(map_clusters)
 
-        # Save map to an HTML file (optional)
-        map_clusters.save(f"{output_path.replace('.csv', '')}_map.html")
+        map_file = f"{output_path.replace('.csv', '')}_map.html"
+        map_clusters.save(map_file)
+        
+        return jsonify({"message": f"Data saved to {output_path}", "map_file": map_file}), 200
         
     else:
-        print(f"Error: {response.status_code}")
-        print(response.text)
+        return jsonify({"message": f"Error: {response.status_code}", "details": response.text}), response.status_code
 
-# Example usage
-# get_nearby_restaurants('Coffee Shops', 39.952583, -75.165222, 'restaurants_output.csv')
+@app.route('/get_nearby_restaurants', methods=['GET'])
+def api_get_nearby_restaurants():
+    restaurant_type = request.args.get('restaurant_type')
+    latitude = float(request.args.get('latitude'))
+    longitude = float(request.args.get('longitude'))
+    output_path = request.args.get('output_path')
+    
+    response = get_nearby_restaurants(restaurant_type, latitude, longitude, output_path)
+    return response
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
