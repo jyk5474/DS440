@@ -13,21 +13,13 @@ BASE_URL = 'https://api.foursquare.com/v3/places/search'
 app = Flask(__name__)
 
 def get_nearby_restaurants(restaurant_type, latitude, longitude, output_path):
-    """
-    Fetches nearby restaurants of a given type, clusters the results, and saves them to a CSV file.
     
-    Parameters:
-    restaurant_type (str): Type of restaurant to search for.
-    latitude (float): Latitude of the location to search around.
-    longitude (float): Longitude of the location to search around.
-    output_path (str): Path to save the output CSV file.
-    """
     params = {
         "query": restaurant_type,
         "ll": f"{latitude},{longitude}",
         "radius": 10000,  # Radius in meters
         "sort": "DISTANCE",
-        "limit": 50,  # Adjust this limit based on the API's maximum allowed per request
+        "limit": 50,  # limit of businesses that we can get from four square
     }
 
     headers = {
@@ -35,7 +27,7 @@ def get_nearby_restaurants(restaurant_type, latitude, longitude, output_path):
         "Authorization": API_KEY
     }
 
-    # Make the API request
+
     response = requests.get(BASE_URL, params=params, headers=headers)
 
     # Check if the request was successful
@@ -44,7 +36,7 @@ def get_nearby_restaurants(restaurant_type, latitude, longitude, output_path):
         results = data.get('results', [])
         restaurants = []
 
-        # Extract and store the relevant information
+        # extract and store the relevant information
         for venue in results:
             name = venue.get('name', 'No Name')
             lat = venue.get('geocodes', {}).get('main', {}).get('latitude', 'No Latitude')
@@ -60,28 +52,24 @@ def get_nearby_restaurants(restaurant_type, latitude, longitude, output_path):
 
         df = pd.DataFrame(restaurants)
         
-        # Check if data is available
+       
         if df.empty:
             return jsonify({"message": f"No data found for restaurant type: {restaurant_type} at location ({latitude}, {longitude})"}), 404
         
-        # Run k-means clustering
+        
         k = 3  # Set the number of clusters
         kmeans = KMeans(n_clusters=k, random_state=0)
         df['cluster'] = kmeans.fit_predict(df[['latitude', 'longitude']])
         
-        # Save to CSV
         df.to_csv(output_path, index=False)
         
-        # Create and save a map with clusters visualized
         map_clusters = folium.Map(location=[latitude, longitude], zoom_start=12)
         
-        # Set color scheme for clusters
         x = np.arange(k)
         ys = [i + x + (i*x)**2 for i in range(k)]
         colors_array = cm.rainbow(np.linspace(0, 1, len(ys)))
         rainbow = [colors.rgb2hex(i) for i in colors_array]
 
-        # Add markers to the map
         for lat, lon, cluster in zip(df['latitude'], df['longitude'], df['cluster']):
             folium.CircleMarker(
                 [lat, lon],
@@ -112,4 +100,9 @@ def api_get_nearby_restaurants():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+
 
