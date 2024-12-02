@@ -2,30 +2,22 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# These methods control the main function of our program that being dynamically creating and showing demographics from pennsylvannia 
+
 def plot_age_distribution(zipcode, output_path):
-    """
-    Plot a bar graph of age brackets vs. their respective values for a given zipcode.
     
-    Parameters:
-    zipcode (int or str): Zipcode to filter the data.
-    output_path (str): Path to save the plot.
-    """
-    # Load the dataset
-    df = pd.read_csv('AgeDatasetPA.csv')
+    df = pd.read_csv('Datasets\ExpandedPA_Age.csv')
     
-    # Filter the DataFrame for the given zipcode
     df_zipcode = df[df['ZipCode'] == int(zipcode)]
     
-    # Check if the dataframe is empty after filtering
     if df_zipcode.empty:
         print(f"No data found for zipcode: {zipcode}")
         return
     
-    # Extract the age brackets and their respective values
-    age_brackets = df.columns[2:-1].astype(str)  
-    values = df_zipcode.iloc[0, 2:-1]    # Get the first row's age bracket values
+    age_brackets = ['Under5', '5to9', '10to14', '15to19', '20to24', '25to29', '30to34', '35to39', '40to44', '45to49', '50to54', '55to59', '60to64', '65to69', '70to74', '75to79', '80to84', 'over85']
     
-    # Plot the bar graph
+    values = df_zipcode[age_brackets].iloc[0].values 
+    
     plt.figure(figsize=(12, 6))
     plt.bar(age_brackets, values, color='skyblue')
     plt.xlabel('Age Bracket')
@@ -34,39 +26,26 @@ def plot_age_distribution(zipcode, output_path):
     plt.xticks(rotation=45)
     plt.tight_layout()
     
-
-    # Save the plot to the output path
     plt.savefig(output_path)
     plt.close()
 
 
-import pandas as pd
-import matplotlib.pyplot as plt
 
 def plot_income_distribution(zipcode,output_path):
-    """
-    Plot a bar graph of median income information for different age groups for a given zipcode.
+
+    df = pd.read_csv('Datasets\IncomeBracketPA.csv')
     
-    Parameters:
-    zipcode (int or str): Zipcode to filter the data.
-    """
-    # Load the dataset
-    df = pd.read_csv('IncomeBracketPA.csv')
-    
-    # Filter the DataFrame for the given zipcode
     df_zipcode = df[df['ZipCode'] == int(zipcode)]
     
-    # Check if the dataframe is empty after filtering
     if df_zipcode.empty:
         print(f"No data found for zipcode: {zipcode}")
         return
     
-    # Extract the age brackets and their respective values
     age_brackets = df.columns[2:-1].astype(str)  
-    values =  df_zipcode.iloc[0, 2:-1].astype(int) # Get the first row's income values for the given zipcode
+    values =  df_zipcode.iloc[0, 2:-1].astype(int) 
     
     values.fillna(0, inplace=True)
-    # Plot the bar graph
+
     plt.figure(figsize=(12, 6))
     plt.bar(age_brackets, values, color='skyblue')
     plt.xlabel('Age Group')
@@ -80,25 +59,16 @@ def plot_income_distribution(zipcode,output_path):
     plt.savefig(output_path)
     plt.close()
 
-
+# We discussed the necessity of this final method but decided to include it as it simplifies the code slightly instead of calling two different methods for the different graphs
+# we call this method which calls the method that the user selected
 def create_demographic_plot(zip_code, demographic_type, output_path):
-    """
-    Create a demographic plot (either income or age) based on the given demographic type.
     
-    Parameters:
-    zip_code (str): The zip code to generate data for.
-    demographic_type (str): The demographic type (either 'income' or 'age').
-    output_path (str): Path to save the plot.
-    """
     if demographic_type == 'income':
-        # Generate a sample income plot
         plot_income_distribution(zip_code,output_path)
     elif demographic_type == 'age':
-        # Call the plot_age_distribution function for the age demographic type
         plot_age_distribution(zip_code, output_path)
 
 if __name__ == "__main__":
-    # Get arguments: zip code, demographic type, and output path
     zip_code = sys.argv[1]
     demographic_type = sys.argv[2]
     output_path = sys.argv[3]
