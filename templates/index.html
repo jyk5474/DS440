@@ -1,91 +1,191 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Leaflet Map with Sidebar</title>
+    <title>Leaflet Map with Bootstrap</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!--bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
 
     <style>
-      body {
-        display: flex; 
-        margin: 0;
-        padding: 0;
-      }
-
-      .map-container {
-        width: 60%;
-        height: 100vh;  /* Ensure the container takes up the full height */
-        padding: 20px;
-        box-sizing: border-box;  /* This ensures padding is included in the element's total size */
-      }     
-
+      /* styling options to control gaps, fonts, heights, and widths*/
+      /*main map object container*/
       #map {
-        height: 90vh; 
-        width: 100%;  
-        background-color: #ffffff;
-        border: 1px solid #ddd; 
+        height: 100%;
+        width: 100%;
+        border: 1px solid #000; 
       }
 
       #sidebar {
-        width: 40%;     
-        padding: 20px;  
-        background-color: #f1f1f1; 
+        border-left: 1px solid #ddd; 
+        width: 100%;
       }
 
-      .box {
-        height: auto;     
-        background-color: #fff;
-        border: 1px solid #ddd;
-        margin-bottom: 20px; 
-        padding: 10px; 
+
+      #info .form-check:last-child {
+        margin-bottom: 0.5rem; 
+      }
+      
+      #clustering-section {
+        margin-top: .5rem; 
       }
 
-      .plot-box {
-        height: auto;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        margin-bottom: 20px;
-        padding: 10px;
-        text-align: center;
+      .form-check-label,
+      #clustering-section label,
+      #clustering-section input,
+      #clustering-section button {
+        font-size: 0.85rem; 
+      }
+
+      #clustering-section input {
+        font-size: 0.85rem;
+        padding: 0.1rem 0.3rem; 
+      }
+
+      #clustering-section button {
+        font-size: 0.75rem; 
+        padding: 0.1rem; 
+      }
+
+      .mb-4 {
+        margin-bottom: .1rem; 
+      }
+
+      h5 {
+        font-size: 1rem; 
+        margin-bottom: 0.3rem; 
       }
 
       .plot-box img {
         max-width: 100%;
         height: auto;
       }
+
+      .btn-primary {
+        background-color: black;
+        border-color: black;
+      }
+
+      .btn-primary:hover {
+        background-color: #333;
+        border-color: #333;
+      }
     </style>
   </head>
-  <body>
-    <div class="map-container">
-      <div id="map"></div> <!-- The map container -->
+  <body class="bg-white">
+    <div class="d-flex vh-100">
+      <!-- Map Container -->
+      <div class="flex-grow-1 p-3">
+        <div id="map" class="rounded"></div>
+      </div>
+
+      <!-- Sidebar -->
+      <div id="sidebar" class="bg-white p-4 shadow" style="width: 40%;">
+        <!-- Info Section -->
+        <div id="info" class="mb-4">
+          <h5 class="text-black-50">Options</h5>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="income-checkbox"
+            />
+            <label class="form-check-label text-black-50" for="income-checkbox">
+              Show Income
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="age-checkbox" />
+            <label class="form-check-label text-black-50" for="age-checkbox">
+              Show Age
+            </label>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="suppliers-checkbox"
+            />
+            <label
+              class="form-check-label text-black-50"
+              for="suppliers-checkbox"
+            >
+              Show Supplier Locations
+            </label>
+          </div>
+        </div>
+
+        <!-- Clustering Section -->
+        <div id="clustering-section" class="mb-4">
+          <h5 class="text-black-50">Clustering</h5>
+          <label for="restaurant-type" class="form-label text-black-50">
+            Restaurant Type:
+          </label>
+          <input
+            type="text"
+            id="restaurant-type"
+            placeholder="e.g., Pizza"
+            class="form-control mb-2"
+          />
+        
+          <!-- using dflex to make buttons appear next to each other-->
+          <div class="d-flex gap-2">
+            <button
+              id="find-clusters-btn"
+              class="btn btn-primary btn-sm w-50"
+            >
+              Find and Cluster
+            </button>
+            <button
+              id="clear-clusters-btn"
+              class="btn btn-outline-secondary btn-sm w-50"
+            >
+              Clear Clusters
+            </button>
+          </div>
+        </div>
+
+        <!-- plot subsection -->
+        <div class="plot-box d-none" id="plot-box">
+          <img id="plot-img" class="img-fluid rounded" alt="Data Plot" />
+        </div>
+
+        <!-- Coordinates and ZIP this was initially just used for testing but left in the final version-->
+        <div class="mt-4">
+          <p id="coordinates" class="text-muted"></p>
+          <p id="zip-code" class="text-muted"></p>
+        </div>
+      </div>
     </div>
 
-    <div id="sidebar">
-      <div id="info" class="box">
-        <label><input type="checkbox" id="income-checkbox"> Show Income</label><br>
-        <label><input type="checkbox" id="age-checkbox"> Show Age</label><br>
-        <label><input type="checkbox" id="suppliers-checkbox"> Show Supplier Locations</label>
-      </div>
-      <div class="plot-box" id="plot-box" style="display: none;">
-        <img id="plot-img" alt="Data Plot">
-      </div>
-      <p id="coordinates"></p>
-      <p id="zip-code"></p>
-    </div>
-
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
 
     <script>
-      // Initialize the map 
-      var map = L.map('map').setView([40.7934, -77.8600], 13);
+      // Initialize the map in the container created in html
+      var map = L.map("map").setView([40.7934, -77.8600], 13);
 
-      // Add OpenStreetMap tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      // openStreetMap tiles
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
       // Elements for displaying information
@@ -127,36 +227,34 @@
       incomeCheckbox.addEventListener('change', function() {
         if (incomeCheckbox.checked) {
           ageCheckbox.checked = false;
-          updatePlots(); // Update plots when selection changes
+          updatePlots(); 
         }
       });
 
       ageCheckbox.addEventListener('change', function() {
         if (ageCheckbox.checked) {
           incomeCheckbox.checked = false;
-          updatePlots(); // Update plots when selection changes
+          updatePlots();
         }
       });
 
-      // Event listener for map clicks
+      //listener for map clicks and too remove the current selection when a new one is made
       map.on('click', function(e) {
         var lat = e.latlng.lat.toFixed(4);
         var lng = e.latlng.lng.toFixed(4);
-
-        // Remove the current circle
         if (currentCircle) {
           map.removeLayer(currentCircle);
         }
 
-        // Add a blue circle marker at the user-selected location
+        // user-selected location
         currentCircle = L.circle([lat, lng], {
-          color: 'blue',
-          fillColor: 'blue',
+          color: 'black',
+          fillColor: 'black',
           fillOpacity: 0.5,
           radius: 1
         }).addTo(map);
 
-        // Get ZIP code using OpenCage API
+        // get ZIP code using OpenCage API this takes in lat and long from the user selection and returns zip code
         var apiKey = 'b3f99b81ff6844468e9c5f8333121a51'; 
         var apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${apiKey}`;
 
@@ -184,32 +282,36 @@
           });
       });
 
-    function updatePlots(zip) {
+  function updatePlots(zip) {
     var showIncome = incomeCheckbox.checked;
     var showAge = ageCheckbox.checked;
 
-    // Determine demographic type based on selected checkboxes
-    var demographicType = showIncome ? 'income' : showAge ? 'age' : '';
+    // Determine demographic type based on selected checkboxes this is used in our python function to output correct graph
+    var demographicType = showIncome ? "income" : showAge ? "age" : "";
 
     // Send zip code and demographic type to Flask for generating the graph
     if (demographicType && zip) {
-      fetch('/generate_graph', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zipCode: zip, demographicType: demographicType })
+      fetch("/generate_graph", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ zipCode: zip, demographicType: demographicType }),
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          plotImg.src = `/static/graphs/${data.graphFilename}`;
-          plotBox.style.display = 'block';
-        } else {
-          plotBox.style.display = 'none';
-        }
-      })
-      .catch(error => console.error('Error:', error));
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            plotImg.src = `/static/graphs/${data.graphFilename}`;
+            // show the plot box
+            plotBox.classList.remove("d-none"); // remove the Bootstrap 'd-none' class, which only exists in case of failure or nothing is selected
+          } else {
+            plotBox.classList.add("d-none"); 
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          plotBox.classList.add("d-none"); // hide the plot box if the request fails, ex) out of bounds zip code
+        });
     } else {
-      plotBox.style.display = 'none';
+      plotBox.classList.add("d-none"); // Hide the plot when no demographic type is selected
     }
   }
 
@@ -217,6 +319,69 @@
       suppliersCheckbox.addEventListener('change', function() {
         toggleSupplierMarkers(suppliersCheckbox.checked);
       });
+
+
+
+    document.getElementById('find-clusters-btn').addEventListener('click', () => {
+    const restaurantType = document.getElementById('restaurant-type').value;
+    const center = map.getCenter(); // Get map center coordinates
+    const lat = center.lat;
+    const lng = center.lng;
+
+    // function that gathers the inputted text and lat and long for clustering and stringifies them for flask
+    fetch('/get_nearby_restaurants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            restaurantType: restaurantType,
+            latitude: lat,
+            longitude: lng
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            addClusterMarkers(data.clusters);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(err => console.error('Error:', err));
+});
+
+// Function to add cluster markers to the map, this uses the csv/html output from flask to place markers on the map
+function addClusterMarkers(clusters) {
+    // Clear existing markers (if needed)
+    if (window.clusterMarkers) {
+        window.clusterMarkers.forEach(marker => map.removeLayer(marker));
+    }
+    window.clusterMarkers = [];
+
+    // Assign colors to clusters
+    const clusterColors = ['red', 'blue', 'green', 'orange', 'purple'];
+    clusters.forEach(cluster => {
+        const color = clusterColors[cluster.cluster % clusterColors.length]; // Cycle through colors
+        const marker = L.circleMarker([cluster.latitude, cluster.longitude], {
+            radius: 2.5,
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.9
+        }).bindPopup(`
+            <strong>${cluster.name}</strong><br>
+            Cluster: ${cluster.cluster}<br>
+            ZIP Code: ${cluster.zip_code}
+        `);
+        marker.addTo(map);
+        window.clusterMarkers.push(marker);
+    });
+}
+
+document.getElementById('clear-clusters-btn').addEventListener('click', () => {
+    if (window.clusterMarkers) {
+        window.clusterMarkers.forEach(marker => map.removeLayer(marker));
+        window.clusterMarkers = [];
+    }
+});
     </script>
   </body>
 </html>
